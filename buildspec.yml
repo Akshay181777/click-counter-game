@@ -11,22 +11,23 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin $ECR_REPOSITORY
+
   build:
     commands:
       - echo Build started on `date`
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
-post_build:
-  commands:
-    - echo Deploying to EC2 instance via SSM...
-    - |
-      aws ssm send-command \
-        --instance-ids $EC2_INSTANCE_ID \
-        --document-name "AWS-RunShellScript" \
-        --comment "Deploy new docker image" \
-        --parameters commands="docker pull $ECR_REPOSITORY:$IMAGE_TAG && docker stop \$(docker ps -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker rm \$(docker ps -a -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker run -d -p 8000:8000 $ECR_REPOSITORY:$IMAGE_TAG" \
-        --region eu-north-1
 
+  post_build:
+    commands:
+      - echo Deploying to EC2 instance via SSM...
+      - |
+        aws ssm send-command \
+          --instance-ids $EC2_INSTANCE_ID \
+          --document-name "AWS-RunShellScript" \
+          --comment "Deploy new docker image" \
+          --parameters commands="docker pull $ECR_REPOSITORY:$IMAGE_TAG && docker stop \$(docker ps -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker rm \$(docker ps -a -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker run -d -p 8000:8000 $ECR_REPOSITORY:$IMAGE_TAG" \
+          --region eu-north-1
 
 artifacts:
   files:
