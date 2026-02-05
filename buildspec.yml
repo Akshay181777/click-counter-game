@@ -1,0 +1,28 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: ap-south-1
+    ECR_REPOSITORY: click-counter-game
+    IMAGE_TAG: latest
+    ACCOUNT_ID: 949156002932
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - docker push $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+artifacts:
+  files: []
