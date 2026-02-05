@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    AWS_DEFAULT_REGION: ap-south-1
+    AWS_DEFAULT_REGION: eu-north-1
     ECR_REPOSITORY: click-counter-game
     IMAGE_TAG: latest
     ACCOUNT_ID: 949156002932
