@@ -10,31 +10,31 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
+      - echo "Login to ECR"
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
 
   build:
     commands:
-      - echo "Build started on $(date)"
+      - echo "Building Docker image"
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo "Deploying to EC2 via SSM..."
+      - echo "Deploying to EC2..."
 
       - |
         aws ssm send-command \
           --instance-ids "$EC2_INSTANCE_ID" \
           --document-name "AWS-RunShellScript" \
-          --comment "Deploy latest Docker image" \
-          --parameters "{\"commands\":[
-            \"aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY\",
-            \"docker pull $ECR_REPOSITORY:$IMAGE_TAG\",
-            \"docker stop click-counter || true\",
-            \"docker rm click-counter || true\",
-            \"docker run -d -p 8000:8000 --name click-counter $ECR_REPOSITORY:$IMAGE_TAG\"
-          ]}" \
+          --comment "Deploy latest container" \
+          --parameters 'commands=[
+            "aws ecr get-login-password --region '"$AWS_REGION"' | docker login --username AWS --password-stdin '"$ECR_REPOSITORY"'",
+            "docker stop click-counter || true",
+            "docker rm click-counter || true",
+            "docker pull '"$ECR_REPOSITORY:$IMAGE_TAG"'",
+            "docker run -d -p 8000:8000 --name click-counter '"$ECR_REPOSITORY:$IMAGE_TAG"'"
+          ]' \
           --region "$AWS_REGION"
 
 artifacts:
