@@ -21,13 +21,13 @@ phases:
 
   post_build:
     commands:
-      - echo "Deploying to EC2 via SSM..."
+      - echo "Deploying container to EC2 via SSM..."
 
       - |
         aws ssm send-command \
           --instance-ids "$EC2_INSTANCE_ID" \
           --document-name "AWS-RunShellScript" \
-          --comment "Auto deploy latest container" \
+          --comment "Deploy latest Docker image" \
           --parameters 'commands=[
             "aws ecr get-login-password --region '"$AWS_REGION"' | docker login --username AWS --password-stdin '"$ECR_REPOSITORY"'",
             "docker pull '"$ECR_REPOSITORY:$IMAGE_TAG"'",
