@@ -20,18 +20,21 @@ phases:
 
   post_build:
     commands:
-      - echo Deploying to EC2 instance via SSM...
+      - echo "Deploying to EC2 via SSM..."
+
       - |
         aws ssm send-command \
           --instance-ids $EC2_INSTANCE_ID \
           --document-name "AWS-RunShellScript" \
           --comment "Deploy new docker image" \
-          --parameters commands="docker pull $ECR_REPOSITORY:$IMAGE_TAG && \
-            containers=\$(docker ps -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) && \
-            if [ -n \"\$containers\" ]; then docker stop \$containers; else echo 'No containers to stop'; fi && \
-            containers_all=\$(docker ps -a -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) && \
-            if [ -n \"\$containers_all\" ]; then docker rm \$containers_all; else echo 'No containers to remove'; fi && \
-            docker run -d -p 8000:8000 $ECR_REPOSITORY:$IMAGE_TAG" \
+          --parameters 'commands=[
+            "docker pull '"$ECR_REPOSITORY:$IMAGE_TAG"'",
+            "containers=$(docker ps -q --filter ancestor='"$ECR_REPOSITORY:$IMAGE_TAG"')",
+            "if [ -n \"$containers\" ]; then docker stop $containers; else echo No containers to stop; fi",
+            "containers_all=$(docker ps -a -q --filter ancestor='"$ECR_REPOSITORY:$IMAGE_TAG"')",
+            "if [ -n \"$containers_all\" ]; then docker rm $containers_all; else echo No containers to remove; fi",
+            "docker run -d -p 8000:8000 '"$ECR_REPOSITORY:$IMAGE_TAG"'"
+          ]' \
           --region eu-north-1
 
 artifacts:
