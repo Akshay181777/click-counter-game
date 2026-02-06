@@ -2,37 +2,37 @@ version: 0.2
 
 env:
   variables:
+    AWS_REGION: eu-north-1
     ECR_REPOSITORY: 949156002932.dkr.ecr.eu-north-1.amazonaws.com/click-counter-game
     IMAGE_TAG: latest
     EC2_INSTANCE_ID: i-07206ba824d195d5c
-    AWS_REGION: eu-north-1
 
 phases:
   pre_build:
     commands:
-      - echo "Login to ECR"
+      - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
 
   build:
     commands:
-      - echo "Building Docker image"
+      - echo "Build started on $(date)"
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker push $ECR_REPOSITORY:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo "Deploying to EC2..."
+      - echo "Deploying to EC2 via SSM..."
 
       - |
         aws ssm send-command \
           --instance-ids "$EC2_INSTANCE_ID" \
           --document-name "AWS-RunShellScript" \
-          --comment "Deploy latest container" \
+          --comment "Auto deploy latest container" \
           --parameters 'commands=[
             "aws ecr get-login-password --region '"$AWS_REGION"' | docker login --username AWS --password-stdin '"$ECR_REPOSITORY"'",
+            "docker pull '"$ECR_REPOSITORY:$IMAGE_TAG"'",
             "docker stop click-counter || true",
             "docker rm click-counter || true",
-            "docker pull '"$ECR_REPOSITORY:$IMAGE_TAG"'",
             "docker run -d -p 8000:8000 --name click-counter '"$ECR_REPOSITORY:$IMAGE_TAG"'"
           ]' \
           --region "$AWS_REGION"
