@@ -5,12 +5,13 @@ env:
     ECR_REPOSITORY: 949156002932.dkr.ecr.eu-north-1.amazonaws.com/click-counter-game
     IMAGE_TAG: latest
     EC2_INSTANCE_ID: i-07206ba824d195d5c
+    AWS_REGION: eu-north-1
 
 phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin $ECR_REPOSITORY
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
 
   build:
     commands:
@@ -22,13 +23,13 @@ phases:
     commands:
       - echo "Deploying to EC2 via SSM..."
 
-      - |
-        aws ssm send-command \
-          --instance-ids "$EC2_INSTANCE_ID" \
-          --document-name "AWS-RunShellScript" \
-          --comment "Deploy latest Docker image" \
-          --parameters commands="docker pull $ECR_REPOSITORY:$IMAGE_TAG && docker stop \$(docker ps -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker rm \$(docker ps -a -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) || true && docker run -d -p 8000:8000 $ECR_REPOSITORY:$IMAGE_TAG" \
-          --region eu-north-1
+      - >
+        aws ssm send-command
+        --instance-ids "$EC2_INSTANCE_ID"
+        --document-name "AWS-RunShellScript"
+        --comment "Deploy latest Docker image"
+        --parameters commands="aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY && docker pull $ECR_REPOSITORY:$IMAGE_TAG && docker stop \$(docker ps -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) 2>/dev/null || true && docker rm \$(docker ps -a -q --filter ancestor=$ECR_REPOSITORY:$IMAGE_TAG) 2>/dev/null || true && docker run -d -p 8000:8000 $ECR_REPOSITORY:$IMAGE_TAG"
+        --region $AWS_REGION
 
 artifacts:
   files:
