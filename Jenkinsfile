@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SCANNER = 'qube'          // Jenkins SonarQube Scanner tool name
+        SONAR_SCANNER = 'qube'           // Jenkins SonarQube Scanner tool name
         SONARQUBE_SERVER = 'server-sonar' // Jenkins SonarQube server name
     }
 
@@ -22,7 +22,8 @@ pipeline {
                         -Dsonar.projectKey=click-counter-game \
                         -Dsonar.projectName=click-counter-game \
                         -Dsonar.sources=. \
-                        -Dsonar.inclusions=**/*.py,**/*.html \
+                        -Dsonar.inclusions=**/*.py,**/*.js,**/*.html \
+                        -Dsonar.python.version=3 \
                         -Dsonar.javascript.node.executable=none
                     """
                 }
@@ -32,7 +33,6 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    // Increased timeout to 10 minutes to prevent pipeline abort
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate abortPipeline: true
                         echo "Quality Gate status: ${qg.status}"
