@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SCANNER = 'qube'           // Jenkins SonarQube Scanner tool name
-        SONARQUBE_SERVER = 'server-sonar' // Jenkins SonarQube server name
+        SONAR_SCANNER = 'qube'
+        SONARQUBE_SERVER = 'server-sonar'
     }
 
     stages {
@@ -24,7 +24,7 @@ pipeline {
                         -Dsonar.sources=. \
                         -Dsonar.inclusions=**/*.py,**/*.js,**/*.html \
                         -Dsonar.python.version=3 \
-                        -Dsonar.javascript.node.executable=none
+                        -Dsonar.javascript.node.executable=/usr/bin/node
                     """
                 }
             }
@@ -32,25 +32,10 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                script {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        def qg = waitForQualityGate abortPipeline: true
-                        echo "Quality Gate status: ${qg.status}"
-                    }
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo "Pipeline finished"
-        }
-        success {
-            echo "Quality Gate passed! ✅"
-        }
-        failure {
-            echo "Quality Gate failed ❌"
         }
     }
 }
