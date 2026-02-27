@@ -40,16 +40,16 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t flask-app .'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Deploy Container') {
             steps {
                 sh '''
-                docker stop flask-container || true
-                docker rm flask-container || true
-                docker run -d -p 8000:8000 --name $CONTAINER_NAME flask-app
+                docker stop $CONTAINER_NAME || true
+                docker rm $CONTAINER_NAME || true
+                docker run -d -p 8000:8000 --name $CONTAINER_NAME $IMAGE_NAME
                 '''
             }
         }
