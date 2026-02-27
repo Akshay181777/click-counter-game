@@ -1,13 +1,12 @@
 pipeline {
     agent any
 
-    environment {
-        SONAR_TOKEN = credentials('sonar-token')
+    tools {
+        sonarRunner 'sonar-scanner'
     }
 
-    tools {
-        // This MUST match the name in Global Tool Configuration
-        sonarRunner 'sonar-scanner'
+    environment {
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
@@ -21,13 +20,11 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('server-sonar') {
-
                     sh """
-                        sonar-scanner \
+                        ${tool 'sonar-scanner'}/bin/sonar-scanner \
                         -Dsonar.projectKey=click-counter-game \
                         -Dsonar.projectName=click-counter-game \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=http://13.61.147.55:9000 \
                         -Dsonar.login=${SONAR_TOKEN}
                     """
                 }
@@ -48,7 +45,7 @@ pipeline {
             echo "✅ Quality Gate Passed!"
         }
         failure {
-            echo "❌ Pipeline Failed! Check SonarQube."
+            echo "❌ Pipeline Failed!"
         }
     }
 }
