@@ -48,6 +48,7 @@ pipeline {
 
         stage('Push Docker Image to ECR') {
             steps {
+                // Use Jenkins-managed AWS credentials
                 withCredentials([usernamePassword(credentialsId: 'aws-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                     export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
@@ -68,14 +69,14 @@ pipeline {
         stage('Deploy Container on EC2') {
             steps {
                 sh '''
-                # Stop old container if exists
+                # Remove old container if exists
                 docker stop $CONTAINER_NAME || true
                 docker rm $CONTAINER_NAME || true
 
                 # Pull latest image from ECR
                 docker pull $ECR_URI:latest
 
-                # Run container
+                # Run new container
                 docker run -d -p 8000:8000 --name $CONTAINER_NAME $ECR_URI:latest
                 '''
             }
