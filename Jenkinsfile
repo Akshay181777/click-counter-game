@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "flask-app"
-        CONTAINER_NAME = "flask-container"
+        IMAGE_NAME = "click-counter-game"
+        CONTAINER_NAME = "click-counter-game-container"
     }
 
     stages {
