@@ -2,40 +2,53 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SCANNER = 'qube'
-        SONARQUBE_SERVER = 'server-sonar'
+        SONAR_TOKEN = credentials('sonar-token')
+    }
+
+    tools {
+        // This MUST match the name in Global Tool Configuration
+        sonarRunner 'sonar-scanner'
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Akshay181777/click-counter-game.git'
+                checkout scm
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                withSonarQubeEnv('server-sonar') {
+
                     sh """
-                        ${tool SONAR_SCANNER}/bin/sonar-scanner \
+                        sonar-scanner \
                         -Dsonar.projectKey=click-counter-game \
                         -Dsonar.projectName=click-counter-game \
                         -Dsonar.sources=. \
-                        -Dsonar.inclusions=**/*.py,**/*.js,**/*.html \
-                        -Dsonar.python.version=3 \
-                        -Dsonar.javascript.node.executable=/usr/bin/node
+                        -Dsonar.host.url=http://13.61.147.55:9000 \
+                        -Dsonar.login=${SONAR_TOKEN}
                     """
                 }
             }
         }
 
-        stage('Quality Gate') {
+        stage('Quality Gate Check') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Quality Gate Passed!"
+        }
+        failure {
+            echo "❌ Pipeline Failed! Check SonarQube."
         }
     }
 }
