@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        SONAR_TOKEN = credentials('sonar-token')
-    }
-
     stages {
 
         stage('Checkout Code') {
@@ -16,18 +12,13 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool(
-                        name: 'sonar-scanner',
-                        type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-                    )
-
+                    def scannerHome = tool 'sonar-scanner'
                     withSonarQubeEnv('server-sonar') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=click-counter-game \
                             -Dsonar.projectName=click-counter-game \
-                            -Dsonar.sources=. \
-                            -Dsonar.login=${SONAR_TOKEN}
+                            -Dsonar.sources=.
                         """
                     }
                 }
@@ -40,15 +31,6 @@ pipeline {
                     waitForQualityGate abortPipeline: true
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Quality Gate Passed!"
-        }
-        failure {
-            echo "❌ Pipeline Failed!"
         }
     }
 }
