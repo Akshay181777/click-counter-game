@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        sonarRunner 'sonar-scanner'
-    }
-
     environment {
         SONAR_TOKEN = credentials('sonar-token')
     }
@@ -19,14 +15,21 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('server-sonar') {
-                    sh """
-                        ${tool 'sonar-scanner'}/bin/sonar-scanner \
-                        -Dsonar.projectKey=click-counter-game \
-                        -Dsonar.projectName=click-counter-game \
-                        -Dsonar.sources=. \
-                        -Dsonar.login=${SONAR_TOKEN}
-                    """
+                script {
+                    def scannerHome = tool(
+                        name: 'sonar-scanner',
+                        type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    )
+
+                    withSonarQubeEnv('server-sonar') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=click-counter-game \
+                            -Dsonar.projectName=click-counter-game \
+                            -Dsonar.sources=. \
+                            -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
                 }
             }
         }
