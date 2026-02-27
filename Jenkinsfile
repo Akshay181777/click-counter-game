@@ -48,16 +48,21 @@ pipeline {
 
         stage('Push Docker Image to ECR') {
             steps {
-                sh '''
-                # Login to ECR
-                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
+                // Jenkins injects your AWS credentials here
+                withCredentials([usernamePassword(credentialsId: 'aws-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                    export AWS_DEFAULT_REGION=$AWS_REGION
 
-                # Tag the image for ECR
-                docker tag $IMAGE_NAME:latest $ECR_URI:latest
+                    # Login to ECR
+                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
 
-                # Push to ECR
-                docker push $ECR_URI:latest
-                '''
+                    # Tag and push Docker image
+                    docker tag $IMAGE_NAME:latest $ECR_URI:latest
+                    docker push $ECR_URI:latest
+                    '''
+                }
             }
         }
 
