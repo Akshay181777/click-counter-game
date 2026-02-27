@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "click-counter-game"
-        CONTAINER_NAME = "click-counter-game-container"
-        ECR_URI = "949156002932.dkr.ecr.eu-north-1.amazonaws.com/click-counter-game"
+        IMAGE_NAME = "click-counter-game-v1"
+        CONTAINER_NAME = "click-counter-game-v1-container"
+        ECR_URI = "949156002932.dkr.ecr.eu-north-1.amazonaws.com/click-counter-game-v1"
         AWS_REGION = "eu-north-1"
     }
 
@@ -23,8 +23,8 @@ pipeline {
                     withSonarQubeEnv('server-sonar') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=click-counter-game \
-                            -Dsonar.projectName=click-counter-game \
+                            -Dsonar.projectKey=click-counter-game-v1 \
+                            -Dsonar.projectName=click-counter-game-v1 \
                             -Dsonar.sources=.
                         """
                     }
@@ -42,13 +42,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh 'docker build -t $IMAGE_NAME:latest .'
             }
         }
 
         stage('Push Docker Image to ECR') {
             steps {
-                // Jenkins injects your AWS credentials here
                 withCredentials([usernamePassword(credentialsId: 'aws-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                     export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
